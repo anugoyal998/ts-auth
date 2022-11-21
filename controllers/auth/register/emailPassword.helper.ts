@@ -6,7 +6,7 @@ import refreshModel from "../../../models/refresh.model";
 import bcrypt from 'bcrypt'
 import Jwt from '../../../services/Jwt'
 import ENV from '../../../config'
-import { IPayload } from "../../../types";
+import { IFindOneUser, IPayload, IProvider } from "../../../types";
 const { JWT_REFRESH_SECRET } = ENV
 
 export const emailPasswordHelper = async (
@@ -31,38 +31,60 @@ export const emailPasswordHelper = async (
         return next(error)
     }
 
-    // check for existing user
-
+    // find providers
+    let user: IFindOneUser;
     try {
-        const exist = await userModel.exists({ username: req.body.username})
-        if(exist){
-            return next(CustomErrorHandler.alreadyExist('This email is already in use'))
-        }
+        user = await userModel.findOne({ username: req.body.username }) as IFindOneUser
     } catch (err) {
         return next(err)
     }
-
-    // save user
     const hashedPassword = await bcrypt.hash(req.body.password,10)
+    
+    if(!user){
+        // save user
+        const newUser = new userModel({
+            username: req.body.username,
+            providers: [{
+                provider,
+                name: req.body.name,
+                profilePhotoURL: req.body.profilePhotoURL,
+                isEmailPassword: true,
+                password: hashedPassword
+            }]
+        })
+        try {
+            await newUser.save()
+        } catch (err) {
+            return next(err)
+        }
+    }else{
+        const [emailPasswordProvider] = user.providers.filter((ele: IProvider)=> ele.provider === "emailPassword")
+        if(emailPasswordProvider){
+            return next(CustomErrorHandler.alreadyExist('This email is already in use'));
+        }   
+        try {
+            await userModel.findByIdAndUpdate({_id: user._id},{
+                $push: {
+                    providers: {
+                        provider,
+                        name: req.body.name,
+                        profilePhotoURL: req.body.profilePhotoURL,
+                        isEmailPassword: true,
+                        password: hashedPassword
+                    }
+                }
+            })
+        } catch (err) {
+            return next(err);
+        }
+    }
 
-    const user = new userModel({
-        username: req.body.username,
-        providers: [{
-            provider,
-            name: req.body.name,
-            profilePhotoURL: req.body.profilePhotoURL,
-            isEmailPassword: true,
-            password: hashedPassword
-        }]
-    })
-
-    // genrate tokens
+    // generate tokens
 
     let accessToken;
     let refreshToken;
 
     try {
-        await user.save()
         const payload: IPayload = {
             name: req.body.name,
             profilePhotoURL: req.body.profilePhotoURL,

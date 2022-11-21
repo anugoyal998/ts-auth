@@ -1,3 +1,9 @@
 import { registerController } from "./auth/register/register.controller";
+import { loginController } from "./auth/login/login.controller"
 
-export default { registerController };
+const controllers = {
+    registerController,
+    loginController
+}
+
+export default controllers;

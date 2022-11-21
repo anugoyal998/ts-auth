@@ -5,7 +5,7 @@ import userModel from "../../../models/user.model";
 import refreshModel from "../../../models/refresh.model";
 import Jwt from '../../../services/Jwt'
 import ENV from '../../../config'
-import { IPayload } from "../../../types";
+import { IFindOneUser, IPayload, IProvider } from "../../../types";
 const { JWT_REFRESH_SECRET } = ENV
 
 export const githubHelper = async (
@@ -28,34 +28,57 @@ export const githubHelper = async (
         return next(error)
     }
 
-    // check for existing user
-
+    // find providers
+    let user: IFindOneUser;
     try {
-        const exist = await userModel.exists({ username: req.body.username})
-        if(exist){
-            return next(CustomErrorHandler.alreadyExist('This email is already in use'))
-        }
+        user = await userModel.findOne({ username: req.body.username }) as IFindOneUser
     } catch (err) {
         return next(err)
     }
 
-    const user = new userModel({
-        username: req.body.username,
-        providers: [{
-            provider,
-            name: req.body.name,
-            profilePhotoURL: req.body.profilePhotoURL,
-            isEmailPassword: false,
-        }]
-    })
-
+    if(!user){
+        // save user
+        const newUser = new userModel({
+            username: req.body.username,
+            providers: [{
+                provider,
+                name: req.body.name,
+                profilePhotoURL: req.body.profilePhotoURL,
+                isEmailPassword: false,
+            }]
+        })
+        try {
+            await newUser.save()
+        } catch (err) {
+            return next(err)
+        }
+    }else{
+        const [githubProvider] = user.providers.filter((ele: IProvider)=> ele.provider === "github")
+        if(githubProvider){
+            return next(CustomErrorHandler.alreadyExist('This email is already in use'));
+        }   
+        try {
+            await userModel.findByIdAndUpdate({_id: user._id},{
+                $push: {
+                    providers: {
+                        provider,
+                        name: req.body.name,
+                        profilePhotoURL: req.body.profilePhotoURL,
+                        isEmailPassword: false,
+                    }
+                }
+            })
+        } catch (err) {
+            return next(err);
+        }
+    }
+    
     // genrate tokens
 
     let accessToken;
     let refreshToken;
 
     try {
-        await user.save()
         const payload: IPayload = {
             name: req.body.name,
             profilePhotoURL: req.body.profilePhotoURL,
