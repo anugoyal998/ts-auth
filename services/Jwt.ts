@@ -3,6 +3,7 @@ import ENV from '../config'
 const { JWT_ACCESS_SECRET } = ENV
 
 class Jwt {
+    static EXPIRY = "1d"
     static createToken(payload: any, expiry: string = '1h', secret = JWT_ACCESS_SECRET): string{
         return jwt.sign(payload, secret, { expiresIn: expiry})
     }

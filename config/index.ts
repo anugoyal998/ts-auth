@@ -10,11 +10,11 @@ type IEnv = {
 }
 
 const envConfig: IEnv = {
-    APP_PORT: process.env.PORT || 5000,
+    APP_PORT: process.env.PORT || 8000,
     DEBUG_MODE: process.env.DEBUG_MODE || '',
     DB_URL: process.env.DB_URL || '',
     JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || '',
-    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || ''
+    JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
 }
 
 export default envConfig

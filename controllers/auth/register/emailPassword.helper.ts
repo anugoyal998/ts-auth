@@ -91,7 +91,7 @@ export const emailPasswordHelper = async (
             username: req.body.username
         }
         accessToken = Jwt.createToken(payload)
-        refreshToken = Jwt.createToken(payload,'7d',JWT_REFRESH_SECRET)
+        refreshToken = Jwt.createToken(payload,Jwt.EXPIRY,JWT_REFRESH_SECRET)
         await refreshModel.create({ token: refreshToken })
     } catch (err) {
         return next(err)

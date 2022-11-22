@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import controllers from "./controllers";
 import auth from "./middlewares/auth";
-const { registerController, loginController, whoAmIController, logoutController } = controllers;
+const { registerController, loginController, whoAmIController, logoutController, refreshController } = controllers;
 const router = express.Router();
 
 router.get("/test", (req: Request, res: Response) => {
@@ -12,5 +12,6 @@ router.post("/register", registerController);
 router.post("/login",loginController)
 router.get("/whoAmI", auth, whoAmIController);
 router.post("/logout",auth,logoutController);
+router.post("/refresh",refreshController);
 
 export default router;
