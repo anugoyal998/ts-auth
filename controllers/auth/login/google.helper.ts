@@ -5,7 +5,7 @@ import userModel from "../../../models/user.model";
 import refreshModel from "../../../models/refresh.model";
 import Jwt from '../../../services/Jwt'
 import ENV from '../../../config'
-import { IPayload } from "../../../types";
+import { IFindOneUser, IPayload, IProvider } from "../../../types";
 const { JWT_REFRESH_SECRET } = ENV
 
 export const googleHelper = async (
@@ -27,9 +27,9 @@ export const googleHelper = async (
     }
 
     // find user
-    let user;
+    let user: IFindOneUser;
     try {
-        user = await userModel.findOne({ username: req.body.username})
+        user = await userModel.findOne({ username: req.body.username}) as IFindOneUser
         if(!user){
             return next(CustomErrorHandler.notFound('user not found'))
         }
@@ -37,9 +37,11 @@ export const googleHelper = async (
         return next(err)
     }
 
-    const [userProvider] = user.providers.filter((e)=> e.provider === "google")
+    const [userProvider] = user.providers.filter((e: IProvider)=> e.provider === "google")
 
-    
+    if(!userProvider) {
+        return next(CustomErrorHandler.notFound())
+    }
 
     // genrate tokens
 

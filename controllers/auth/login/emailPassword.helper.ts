@@ -6,7 +6,7 @@ import refreshModel from "../../../models/refresh.model";
 import bcrypt from 'bcrypt'
 import Jwt from '../../../services/Jwt'
 import ENV from '../../../config'
-import { IPayload } from "../../../types";
+import { IFindOneUser, IPayload, IProvider } from "../../../types";
 const { JWT_REFRESH_SECRET } = ENV
 
 export const emailPasswordHelper = async (
@@ -30,9 +30,9 @@ export const emailPasswordHelper = async (
     }
 
     // find user
-    let user;
+    let user: IFindOneUser;
     try {
-        user = await userModel.findOne({ username: req.body.username})
+        user = await userModel.findOne({ username: req.body.username}) as IFindOneUser
         if(!user){
             return next(CustomErrorHandler.notFound('user not found'))
         }
@@ -42,15 +42,19 @@ export const emailPasswordHelper = async (
 
     // match password
 
-    const [userProvider] = user.providers.filter((e)=> e.provider === "emailPassword")
+    const [userProvider] = user.providers.filter((e: IProvider)=> e.provider === "emailPassword")
 
-    try {
-        const match = await bcrypt.compare(req.body.password,userProvider.password as string)
-        if(!match) {
-            return next(CustomErrorHandler.wrongCredentials())
+    if(!userProvider){
+        return next(CustomErrorHandler.notFound())
+    }else{
+        try {
+            const match = await bcrypt.compare(req.body.password,userProvider.password as string)
+            if(!match) {
+                return next(CustomErrorHandler.wrongCredentials())
+            }
+        } catch (err) {
+            return next(err)
         }
-    } catch (err) {
-        return next(err)
     }
 
     // genrate tokens
