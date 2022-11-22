@@ -4,6 +4,16 @@ import cors from 'cors'
 import ENV from './config'
 import router from './router'
 import errorHandler from './middlewares/errorHandler'
+import { IPayload } from './types'
+
+declare global {
+    namespace Express {
+      interface Request {
+        user?: IPayload
+      }
+    }
+}
+
 const app: Application = express()
 const { APP_PORT } = ENV
 

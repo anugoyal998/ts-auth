@@ -1,6 +1,7 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import controllers from "./controllers";
-const { registerController, loginController } = controllers;
+import auth from "./middlewares/auth";
+const { registerController, loginController, whoAmIController } = controllers;
 const router = express.Router();
 
 router.get("/test", (req: Request, res: Response) => {
@@ -9,5 +10,5 @@ router.get("/test", (req: Request, res: Response) => {
 
 router.post("/register", registerController);
 router.post("/login",loginController)
-
+router.get("/whoAmI", auth, whoAmIController);
 export default router;
